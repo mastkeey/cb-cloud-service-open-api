@@ -1,0 +1,105 @@
+name: Build and Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Select branch to work with'
+        required: true
+        default: 'main'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: 'temurin'
+
+      - name: Generate package version with branch name
+        id: set-version
+        run: |
+          BRANCH_NAME="${{ github.event.inputs.branch }}"
+          SAFE_BRANCH_NAME=$(echo "$BRANCH_NAME" | sed 's/[\/:_]/-/g')
+          PACKAGE_VERSION="1.0.0-$SAFE_BRANCH_NAME"
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
+
+      - name: Debug API Response
+        run: |
+          PACKAGE_NAME="ru.mastkey.api-contract"
+          OWNER="mastkeey"
+          
+          echo "Fetching versions for package $PACKAGE_NAME..."
+          RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/users/$OWNER/packages/maven/$PACKAGE_NAME/versions")
+          
+          echo "Raw Response: $RESPONSE"
+
+      - name: Fetch package versions
+        id: fetch-versions
+        run: |
+          PACKAGE_NAME="ru.mastkey.api-contract"
+          OWNER="mastkeey"
+          
+          echo "Fetching versions for package $PACKAGE_NAME..."
+          RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/users/$OWNER/packages/maven/$PACKAGE_NAME/versions")
+          
+          if echo "$RESPONSE" | jq -e '.message == "Package not found."' > /dev/null; then
+            echo "Package not found. Setting default values."
+            echo "VERSION_ID=null" >> $GITHUB_ENV
+            echo "VERSIONS_COUNT=0" >> $GITHUB_ENV
+            echo "EXISTING_BRANCHES=" >> $GITHUB_ENV
+          else
+            echo "Package found. Processing versions..."
+            VERSIONS=$(echo "$RESPONSE" | jq '.')
+            VERSION_ID=$(echo "$VERSIONS" | jq -r --arg VERSION "$PACKAGE_VERSION" '.[] | select(.name == $VERSION) | .id' || echo "null")
+            echo "VERSION_ID=$VERSION_ID" >> $GITHUB_ENV
+          
+            VERSIONS_COUNT=$(echo "$VERSIONS" | jq -r '. | length')
+            echo "VERSIONS_COUNT=$VERSIONS_COUNT" >> $GITHUB_ENV
+          
+            EXISTING_BRANCHES=$(echo "$VERSIONS" | jq -r '.[].name' | sed 's/1\.0\.0-//g' | paste -sd "," - || echo "")
+            echo "EXISTING_BRANCHES=$EXISTING_BRANCHES" >> $GITHUB_ENV
+          fi
+
+      - name: Delete existing package version if same branch
+        if: env.VERSION_ID != ''
+        run: |
+          echo "Deleting existing version $PACKAGE_VERSION..."
+          curl -X DELETE -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+               -H "Accept: application/vnd.github+json" \
+               "https://api.github.com/user/packages/maven/ru.mastkey.api-contract/versions/${VERSION_ID}"
+
+      - name: Set up Maven settings
+        run: |
+          mkdir -p ~/.m2
+          cat <<EOF > ~/.m2/settings.xml
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://www.mvnrepository.com/xsd/settings-1.0.0.xsd">
+            <servers>
+              <server>
+                <id>github</id>
+                <username>${{ secrets.GH_USERNAME }}</username>
+                <password>${{ secrets.GH_TOKEN }}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
+      - name: Update version in pom.xml
+        run: mvn versions:set -DnewVersion=${{ env.PACKAGE_VERSION }} && mvn versions:commit
+
+      - name: Deploy to GitHub Packages
+        run: mvn clean deploy
