@@ -51,6 +51,11 @@
             <version>2.2.22</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>6.1.14</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -96,6 +101,7 @@
                             <generateApiTests>false</generateApiTests>
                             <generateSupportingFiles>true</generateSupportingFiles>
                             <generateApiDocumentation>false</generateApiDocumentation>
+                            <templateDirectory>./templates</templateDirectory>
                             <supportingFilesToGenerate>
                                 BaseApi.java,ApiCallback.java,ApiClient.java,ApiException.java,ApiResponse.java,
                                 Configuration.java,Pair.java,ProgressRequestBody.java,ProgressResponseBody.java,
@@ -103,11 +109,11 @@
                                 OAuth.java,EncodingUtils.java,Configuration.java,StringUtil.java,JavaTimeFormatter.java,ServerConfiguration.java,ServerVariable.java,RFC3339DateFormat.java
                             </supportingFilesToGenerate>
                             <typeMappings>
-                                <typeMapping>binary=UrlResource</typeMapping>
-                                <typeMapping>file=UrlResource</typeMapping>
+                                <typeMapping>binary=MockMultipartFile</typeMapping>
+                                <typeMapping>file=MockMultipartFile</typeMapping>
                             </typeMappings>
                             <importMappings>
-                                <importMapping>UrlResource=org.springframework.core.io.UrlResource</importMapping>
+                                <importMapping>MockMultipartFile=org.springframework.mock.web.MockMultipartFile</importMapping>
                             </importMappings>
                             <configOptions>
                                 <generateMetadata>false</generateMetadata>
