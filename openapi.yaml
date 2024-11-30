@@ -119,11 +119,9 @@ paths:
                 - files
               properties:
                 files:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
-                  description: Массив загружаемых файлов (будет использоваться Resource вместо File)
+                  type: string
+                  format: binary
+                  description: Массив загружаемых файлов
       responses:
         '200':
           description: OK
