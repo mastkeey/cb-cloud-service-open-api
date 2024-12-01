@@ -70,6 +70,12 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
+                            <typeMappings>
+                                <typeMapping>resource=Resource</typeMapping>
+                            </typeMappings>
+                            <importMappings>
+                                <importMapping>Resource=org.springframework.core.io.Resource</importMapping>
+                            </importMappings>
                             <inputSpec>${project.basedir}/openapi.yaml</inputSpec>
                             <generatorName>spring</generatorName>
                             <output>.</output>
@@ -111,9 +117,11 @@
                             <typeMappings>
                                 <typeMapping>binary=MockMultipartFile</typeMapping>
                                 <typeMapping>file=MockMultipartFile</typeMapping>
+                                <typeMapping>resource=InputStreamResource</typeMapping>
                             </typeMappings>
                             <importMappings>
                                 <importMapping>MockMultipartFile=org.springframework.mock.web.MockMultipartFile</importMapping>
+                                <importMapping>InputStreamResource=org.springframework.core.io.InputStreamResource</importMapping>
                             </importMappings>
                             <configOptions>
                                 <generateMetadata>false</generateMetadata>

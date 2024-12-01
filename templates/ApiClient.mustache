@@ -3,10 +3,12 @@ package {{invokerPackage}};
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.*;
+import org.springframework.core.io.InputStreamResource;
 {{#joda}}
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 {{/joda}}
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.io.ByteArrayInputStream;
 import java.time.OffsetDateTime;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -860,6 +862,11 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
       return (T) EntityUtils.toByteArray(entity);
     } else if (valueRawType.equals(File.class)) {
       return (T) downloadFileFromResponse(response);
+    } else if (valueRawType.equals(MockMultipartFile.class)) {
+        byte[] data = EntityUtils.toByteArray(entity);
+        Map<String, List<String>> responseHeaders = transformResponseHeaders(response.getHeaders());
+        var name = extractFilename(responseHeaders.get("Content-Disposition").get(0));
+        return (T) new MockMultipartFile(name, data);
     }
     String mimeType = getResponseMimeType(response);
     if (mimeType == null || isJsonMime(mimeType)) {
@@ -1038,6 +1045,35 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
       throw new ApiException(message, statusCode, responseHeaders, message);
     }
   }
+
+                                                                                        private String extractFilename(String contentDisposition) {
+                                                                                        if (contentDisposition == null || !contentDisposition.contains("filename")) {
+                                                                                        return null;
+                                                                                        }
+
+                                                                                        int startIndex = contentDisposition.indexOf("filename=");
+                                                                                        if (startIndex == -1) {
+                                                                                        return null;
+                                                                                        }
+
+                                                                                        startIndex += "filename=".length();
+                                                                                        char boundaryChar = contentDisposition.charAt(startIndex);
+
+                                                                                        boolean quoted = boundaryChar == '"';
+                                                                                        if (quoted) {
+                                                                                        startIndex++;
+                                                                                        }
+
+                                                                                        int endIndex = quoted
+                                                                                        ? contentDisposition.indexOf('"', startIndex)
+                                                                                        : contentDisposition.indexOf(';', startIndex);
+
+                                                                                        if (endIndex == -1) {
+                                                                                        endIndex = contentDisposition.length();
+                                                                                        }
+
+                                                                                        return contentDisposition.substring(startIndex, endIndex).trim();
+                                                                                        }
 
   /**
    * Invoke API by sending HTTP request with the given options.
