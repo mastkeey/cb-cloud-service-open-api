@@ -95,9 +95,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/FileResponse"
+                $ref: "#/components/schemas/PageFileResponse"
     post:
       tags:
         - file-controller
@@ -195,9 +193,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/WorkspaceResponse"
+                $ref: "#/components/schemas/PageWorkspaceResponse"
   "/api/v1/files/{fileId}":
     get:
       tags:
@@ -234,6 +230,35 @@ paths:
           description: OK
 components:
   schemas:
+    Page:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            anyOf: [ ]
+        totalPages:
+          type: integer
+        totalElements:
+          type: integer
+    PageFileResponse:
+      allOf:
+        - $ref: "#/components/schemas/Page"
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: "#/components/schemas/FileResponse"
+    PageWorkspaceResponse:
+      allOf:
+        - $ref: "#/components/schemas/Page"
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: "#/components/schemas/WorkspaceResponse"
     CreateWorkspaceRequest:
       required:
         - name
