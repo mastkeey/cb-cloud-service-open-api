@@ -213,7 +213,7 @@ paths:
             application/octet-stream:
               schema:
                 type: string
-                format: binary
+                format: resource
     delete:
       tags:
         - file-controller
