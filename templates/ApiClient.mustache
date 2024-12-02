@@ -796,7 +796,7 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
         throw new ApiException(e);
       }
     } else if (mimeType.equals(ContentType.MULTIPART_FORM_DATA.getMimeType())) {
-      MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
+       MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create().setContentType(ContentType.MULTIPART_FORM_DATA.withCharset(StandardCharsets.UTF_8)).setCharset(StandardCharsets.UTF_8);
       for (Entry<String, Object> paramEntry : formParams.entrySet()) {
         Object value = paramEntry.getValue();
         if (value instanceof File) {
@@ -807,7 +807,7 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
         var mpfls = (List<MockMultipartFile>) value;
             mpfls.stream().forEach(file -> {
                 try {
-                    multiPartBuilder.addBinaryBody(paramEntry.getKey(), file.getBytes(), ContentType.APPLICATION_OCTET_STREAM, file.getName());
+                      multiPartBuilder.addBinaryBody(paramEntry.getKey(), file.getBytes(), ContentType.APPLICATION_OCTET_STREAM.withCharset(StandardCharsets.UTF_8), new String(file.getName().getBytes(StandardCharsets.UTF_8)));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -1148,13 +1148,13 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
     if (body != null || !formParams.isEmpty()) {
       if (isBodyAllowed(method)) {
         // Add entity if we have content and a valid method
-        builder.setEntity(serialize(body, formParams, contentTypeObj));
+         builder.setEntity(serialize(body, formParams, contentTypeObj.withCharset(StandardCharsets.UTF_8)));
       } else {
         throw new ApiException("method " + method + " does not support a request body");
       }
     } else {
       // for empty body
-      builder.setEntity(new StringEntity("", contentTypeObj));
+      builder.setEntity(new StringEntity("", contentTypeObj.withCharset(StandardCharsets.UTF_8)));
     }
 
     try (CloseableHttpResponse response = httpClient.execute(builder.build(), context)) {
