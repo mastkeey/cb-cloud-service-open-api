@@ -41,31 +41,31 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/UserResponse"
+                "$ref": "#/components/schemas/CreateUserResponse"
         '400':
           $ref: "#/components/responses/BadRequest"
-  "/api/v1/users/{telegramUserId}/changeCurrentWorkspace":
+  "/api/v1/users/{userId}/workspaces/{workspaceId}":
     post:
       tags:
         - user-controller
-      operationId: changeCurrentWorkspace
+      operationId: addNewWorkspace
       parameters:
-        - name: newWorkspaceId
-          in: query
+        - name: workspaceId
+          in: path
           required: true
           schema:
             type: string
             format: uuid
-        - name: telegramUserId
+        - name: userId
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
       responses:
         '200':
           description: OK
-  "/api/v1/files/users/{telegramUserId}":
+  "/api/v1/files/users/{userId}/workspaces/{workspaceId}":
     get:
       tags:
         - file-controller
@@ -83,12 +83,18 @@ paths:
           schema:
             type: integer
             format: int32
-        - name: telegramUserId
+        - name: userId
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         '200':
           description: OK
@@ -101,12 +107,18 @@ paths:
         - file-controller
       operationId: uploadFiles
       parameters:
-        - name: telegramUserId
+        - name: userId
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -125,13 +137,19 @@ paths:
       responses:
         '200':
           description: OK
-  "/api/v1/workspaces/{workspaceId}":
+  "/api/v1/workspaces/{workspaceId}/users/{userId}":
     delete:
       tags:
         - workspace-controller
       operationId: deleteWorkspace
       parameters:
         - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
           in: path
           required: true
           schema:
@@ -151,6 +169,12 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
         - name: newWorkspaceName
           in: query
           required: true
@@ -163,7 +187,7 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/WorkspaceResponse"
-  "/api/v1/workspaces/users/{telegramUserId}":
+  "/api/v1/workspaces/users/{userId}":
     get:
       tags:
         - workspace-controller
@@ -181,12 +205,12 @@ paths:
           schema:
             type: integer
             format: int32
-        - name: telegramUserId
+        - name: userId
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
       responses:
         '200':
           description: OK
@@ -194,13 +218,46 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PageWorkspaceResponse"
-  "/api/v1/files/{fileId}":
+  "/api/v1/workspaces/users/{userId}/all":
+    get:
+      tags:
+        - workspace-controller
+      operationId: getAllWorkspaces
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkspaceResponse"
+  "/api/v1/files/{fileId}/users/{userId}/workspaces/{workspaceId}":
     get:
       tags:
         - file-controller
       operationId: getFile
       parameters:
         - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
           in: path
           required: true
           schema:
@@ -220,6 +277,18 @@ paths:
       operationId: deleteFile
       parameters:
         - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
           in: path
           required: true
           schema:
@@ -262,14 +331,14 @@ components:
     CreateWorkspaceRequest:
       required:
         - name
-        - telegramUserId
+        - userId
       type: object
       properties:
         name:
           type: string
-        telegramUserId:
-          type: integer
-          format: int64
+        userId:
+          type: string
+          format: uuid
     WorkspaceResponse:
       type: object
       properties:
@@ -278,36 +347,25 @@ components:
           format: uuid
         name:
           type: string
-        telegramUserId:
-          type: integer
-          format: int64
+        userId:
+          type: string
+          format: uuid
     CreateUserRequest:
       required:
-        - chatId
-        - telegramUserId
         - username
       type: object
       properties:
         username:
           type: string
-        telegramUserId:
-          type: integer
-          format: int64
-        chatId:
-          type: integer
-          format: int64
-    UserResponse:
+    CreateUserResponse:
       type: object
       properties:
         id:
           type: string
           format: uuid
-        telegramUserId:
-          type: integer
-          format: int64
-        chatId:
-          type: integer
-          format: int64
+        workspaceId:
+          type: string
+          format: uuid
     FileResponse:
       type: object
       properties:
