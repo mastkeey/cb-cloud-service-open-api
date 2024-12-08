@@ -29,6 +29,7 @@ import org.apache.hc.client5.http.impl.cookie.BasicClientCookie;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.Header;
+import java.net.URLDecoder;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.HttpStatus;
@@ -1078,7 +1079,7 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
                                                                                         endIndex = contentDisposition.length();
                                                                                         }
 
-                                                                                        return contentDisposition.substring(startIndex, endIndex).trim();
+                                                                                        return URLDecoder.decode(contentDisposition.substring(startIndex, endIndex).trim());
                                                                                         }
 
    * Invoke API by sending HTTP request with the given options.
