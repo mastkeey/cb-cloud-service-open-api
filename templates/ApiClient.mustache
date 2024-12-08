@@ -796,23 +796,29 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
         throw new ApiException(e);
       }
     } else if (mimeType.equals(ContentType.MULTIPART_FORM_DATA.getMimeType())) {
-      MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
+      MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create().setCharset(StandardCharsets.UTF_8);
       for (Entry<String, Object> paramEntry : formParams.entrySet()) {
         Object value = paramEntry.getValue();
         if (value instanceof File) {
           multiPartBuilder.addBinaryBody(paramEntry.getKey(), (File) value);
         } else if (value instanceof byte[]) {
           multiPartBuilder.addBinaryBody(paramEntry.getKey(), (byte[]) value);
-        } else if (value instanceof List<?>) {
-        var mpfls = (List<MockMultipartFile>) value;
-            mpfls.stream().forEach(file -> {
-                try {
-                    multiPartBuilder.addBinaryBody(paramEntry.getKey(), file.getBytes(), ContentType.APPLICATION_OCTET_STREAM, file.getName());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-          } else {
+                                                    } else if (value instanceof List<?>) {
+                                                    var mpfls = (List<MockMultipartFile>) value;
+                                                        mpfls.stream().forEach(file -> {
+                                                        try {
+                                                        String encodedFileName = "UTF-8''" + URLEncoder.encode(file.getName(), StandardCharsets.UTF_8.name());
+                                                        multiPartBuilder.addBinaryBody(
+                                                        paramEntry.getKey(),
+                                                        file.getBytes(),
+                                                        ContentType.APPLICATION_OCTET_STREAM,
+                                                        encodedFileName
+                                                        );
+                                                        } catch (IOException e) {
+                                                        throw new RuntimeException(e);
+                                                        }
+                                                        });
+                                                        } else {
           Charset charset = contentType.getCharset();
           if (charset != null) {
             ContentType customContentType = ContentType.create(ContentType.TEXT_PLAIN.getMimeType(), charset);
