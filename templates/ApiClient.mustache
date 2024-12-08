@@ -808,12 +808,18 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
                                                         mpfls.stream().forEach(file -> {
                                                         try {
                                                         String encodedFileName = "UTF-8''" + URLEncoder.encode(file.getName(), StandardCharsets.UTF_8.name());
+
+                                                        String contentDisposition = String.format("form-data; name=\"%s\"; filename*=%s", paramEntry.getKey(), encodedFileName);
+
                                                         multiPartBuilder.addBinaryBody(
                                                         paramEntry.getKey(),
                                                         file.getBytes(),
                                                         ContentType.APPLICATION_OCTET_STREAM,
-                                                        encodedFileName
+                                                        null
+                                                        ).addTextBody(
+                                                        "Content-Disposition", contentDisposition
                                                         );
+
                                                         } catch (IOException e) {
                                                         throw new RuntimeException(e);
                                                         }
