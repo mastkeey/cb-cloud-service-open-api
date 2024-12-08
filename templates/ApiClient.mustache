@@ -796,7 +796,7 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
         throw new ApiException(e);
       }
     } else if (mimeType.equals(ContentType.MULTIPART_FORM_DATA.getMimeType())) {
-       MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create().setContentType(ContentType.MULTIPART_FORM_DATA.withCharset(StandardCharsets.UTF_8)).setCharset(StandardCharsets.UTF_8);
+       MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create().setCharset(StandardCharsets.UTF_8);
       for (Entry<String, Object> paramEntry : formParams.entrySet()) {
         Object value = paramEntry.getValue();
         if (value instanceof File) {
