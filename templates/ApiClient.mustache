@@ -20,8 +20,6 @@ import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.cookie.Cookie;
 import org.springframework.mock.web.MockMultipartFile;
-import org.apache.hc.client5.http.entity.mime.ByteArrayBody;
-import java.io.*;
 import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -798,7 +796,7 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
         throw new ApiException(e);
       }
     } else if (mimeType.equals(ContentType.MULTIPART_FORM_DATA.getMimeType())) {
-       MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create().setCharset(StandardCharsets.UTF_8);
+       MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create().setContentType(ContentType.MULTIPART_FORM_DATA.withCharset(StandardCharsets.UTF_8)).setCharset(StandardCharsets.UTF_8);
       for (Entry<String, Object> paramEntry : formParams.entrySet()) {
         Object value = paramEntry.getValue();
         if (value instanceof File) {
@@ -806,38 +804,14 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
         } else if (value instanceof byte[]) {
           multiPartBuilder.addBinaryBody(paramEntry.getKey(), (byte[]) value);
         } else if (value instanceof List<?>) {
-                                                    var mpfls = (List<MockMultipartFile>) value;
-                                                        mpfls.stream().forEach(file -> {
-                                                        //                try {
-                                                        //                    multiPartBuilder.addBinaryBody(
-                                                        //                            paramEntry.getKey(),
-                                                        //                            file.getBytes(),
-                                                        //                            ContentType.APPLICATION_OCTET_STREAM.withCharset(StandardCharsets.UTF_8),
-                                                        //                            new String(file.getOriginalFilename().getBytes(StandardCharsets.UTF_8)));
-                                                        //                } catch (IOException e) {
-                                                        //                    throw new RuntimeException(e);
-                                                        //                }
-                                                        String encodedFilename = "UTF-8''" + URLEncoder.encode(file.getName(), StandardCharsets.UTF_8);
-                                                        try {
-                                                        multiPartBuilder.addPart(
-                                                        paramEntry.getKey(),
-                                                        new ByteArrayBody(
-                                                        file.getBytes(),
-                                                        ContentType.APPLICATION_OCTET_STREAM,
-                                                        encodedFilename
-                                                        ) {
-                                                        @Override
-                                                        public void writeTo(OutputStream out) throws IOException {
-                                                        out.write(("Content-Disposition: form-data; name=\"" + paramEntry.getKey() +
-                                                        "\"; filename*=" + encodedFilename + "\r\n").getBytes(StandardCharsets.UTF_8));
-                                                        super.writeTo(out);
-                                                        }
-                                                        }
-                                                        );
-                                                        } catch (IOException e) {
-                                                        throw new RuntimeException(e);
-                                                        }
-                                                        });
+        var mpfls = (List<MockMultipartFile>) value;
+            mpfls.stream().forEach(file -> {
+                try {
+                      multiPartBuilder.addBinaryBody(paramEntry.getKey(), file.getBytes(), ContentType.APPLICATION_OCTET_STREAM.withCharset(StandardCharsets.UTF_8), new String(file.getName().getBytes(StandardCharsets.UTF_8)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
           } else {
           Charset charset = contentType.getCharset();
           if (charset != null) {
