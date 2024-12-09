@@ -29,6 +29,7 @@ import org.apache.hc.client5.http.impl.cookie.BasicClientCookie;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.Header;
+import java.net.URLDecoder;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.HttpStatus;
@@ -796,23 +797,29 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
         throw new ApiException(e);
       }
     } else if (mimeType.equals(ContentType.MULTIPART_FORM_DATA.getMimeType())) {
-      MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
+      MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create().setCharset(StandardCharsets.UTF_8);
       for (Entry<String, Object> paramEntry : formParams.entrySet()) {
         Object value = paramEntry.getValue();
         if (value instanceof File) {
           multiPartBuilder.addBinaryBody(paramEntry.getKey(), (File) value);
         } else if (value instanceof byte[]) {
           multiPartBuilder.addBinaryBody(paramEntry.getKey(), (byte[]) value);
-        } else if (value instanceof List<?>) {
-        var mpfls = (List<MockMultipartFile>) value;
-            mpfls.stream().forEach(file -> {
-                try {
-                    multiPartBuilder.addBinaryBody(paramEntry.getKey(), file.getBytes(), ContentType.APPLICATION_OCTET_STREAM, file.getName());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-          } else {
+                                                    } else if (value instanceof List<?>) {
+                                                    var mpfls = (List<MockMultipartFile>) value;
+                                                        mpfls.stream().forEach(file -> {
+                                                        try {
+                                                        String encodedFileName = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8.name());
+                                                        multiPartBuilder.addBinaryBody(
+                                                        paramEntry.getKey(),
+                                                        file.getBytes(),
+                                                        ContentType.APPLICATION_OCTET_STREAM,
+                                                        encodedFileName
+                                                        );
+                                                        } catch (IOException e) {
+                                                        throw new RuntimeException(e);
+                                                        }
+                                                        });
+                                                        } else {
           Charset charset = contentType.getCharset();
           if (charset != null) {
             ContentType customContentType = ContentType.create(ContentType.TEXT_PLAIN.getMimeType(), charset);
@@ -1047,16 +1054,16 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
   }
 
                                                                                         private String extractFilename(String contentDisposition) {
-                                                                                        if (contentDisposition == null || !contentDisposition.contains("filename")) {
+                                                                                        if (contentDisposition == null || !contentDisposition.contains("filename*")) {
                                                                                         return null;
                                                                                         }
 
-                                                                                        int startIndex = contentDisposition.indexOf("filename=");
+                                                                                        int startIndex = contentDisposition.indexOf("filename*=");
                                                                                         if (startIndex == -1) {
                                                                                         return null;
                                                                                         }
 
-                                                                                        startIndex += "filename=".length();
+                                                                                        startIndex += "filename*=UTF-8''".length();
                                                                                         char boundaryChar = contentDisposition.charAt(startIndex);
 
                                                                                         boolean quoted = boundaryChar == '"';
@@ -1072,10 +1079,9 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
                                                                                         endIndex = contentDisposition.length();
                                                                                         }
 
-                                                                                        return contentDisposition.substring(startIndex, endIndex).trim();
+                                                                                        return URLDecoder.decode(contentDisposition.substring(startIndex, endIndex).trim());
                                                                                         }
-
-  /**
+/*
    * Invoke API by sending HTTP request with the given options.
    *
    * @param <T> Type
