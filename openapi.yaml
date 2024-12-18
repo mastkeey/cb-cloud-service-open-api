@@ -6,6 +6,20 @@ servers:
   - url: http://localhost:8080
     description: Generated server url
 paths:
+  "/api/v1/promo":
+    post:
+      tags:
+        - promo-controller
+      operationId: usePromo
+      requestBody:
+        content:
+          application/json;charset=utf-8:
+            schema:
+              "$ref": "#/components/schemas/UsePromoRequest"
+      responses:
+        '200':
+          description: OK
+
   "/api/v1/workspaces":
     post:
       tags:
@@ -263,6 +277,14 @@ paths:
           description: OK
 components:
   schemas:
+    UsePromoRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          format: uuid
     Page:
       type: object
       properties:
